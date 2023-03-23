@@ -1,24 +1,46 @@
-const { Client, MessageMedia, LocalAuth } = require('whatsapp-web.js')
-const qrcode = require('qrcode-terminal')
-const axios = require('axios')
-require('dotenv').config()
+const express = require('express');
+const { Client, MessageMedia, LocalAuth } = require('whatsapp-web.js');
+const qrCode = require('qrcode');
+const qrcodeterminal = require('qrcode-terminal')
+
+const axios = require('axios');
+require('dotenv').config();
+
+const port = process.env.PORT || 3000;
+
+const app = express();
 
 const client = new Client({
     authStrategy: new LocalAuth()
-})
-
-client.on('qr', qr => {
-    qrcode.generate(qr, {small: true})
 });
 
-client.on('authenticated', (session) => console.log(`Autenticado`))
+var qrCodeGenerated;
+client.on('qr', qr => {
+    qrcodeterminal.generate(qr, {small: true})
+    
+// Define a route to display the QR code
+app.get('/', async (req, res) => {
+    console.log({qr})
+    qrCode.toDataURL(qr).then((qrCodeImage) => {
+        res.send(`
+        <h1>Scan the QR code to log in to WhatsApp</h1>
+        <img src="${qrCodeImage}" alt="QR Code" />
+      `)
+    }).catch(error => {
+        console.error(error)
+    })
 
-client.on('ready', () => console.log(''))
-
-client.on('message_create', message => {
-    console.log(message)
-    return commands(message)
+  
 })
+
+
+app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+});
+
+client.on('authenticated', (session) => console.log(`Autenticado`));
+
+
+client.on('message_create', message => commands(message))
 
 client.initialize();
 
@@ -68,8 +90,8 @@ const getDalleResponse = async (clientText) => {
 
 const commands = async (message) => {
     const iaCommands = {
-        davinci3: "/pai",
-        dalle: "/mae",
+        davinci3: "/cleitin",
+        dalle: "/img",
     }
     let firstWord = (message.body.substring(0, message.body.indexOf(" "))).toLowerCase()
    /*
@@ -83,7 +105,7 @@ const commands = async (message) => {
 
     const sender = message.from.includes(process.env.PHONE_NUMBER) ? message.to : message.from
     
-    console.log({firstWord})
+    console.log(firstWord)
 
     switch (firstWord) {
         case iaCommands.davinci3:
